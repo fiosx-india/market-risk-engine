@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIFTY 50 Market Risk Intelligence Engine</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <span class="brand-icon">&#9888;</span>
+            <span class="brand-text">NIFTY 50 Risk Engine</span>
+        </div>
+        <div class="nav-tabs" id="navTabs">
+            <button class="nav-tab active" data-view="dashboard">Dashboard</button>
+            <button class="nav-tab" data-view="instruments">Global Instruments</button>
+            <button class="nav-tab" data-view="companies">Company Profiles</button>
+            <button class="nav-tab" data-view="signals">Early Warnings</button>
+            <button class="nav-tab" data-view="forecasts">Forward Intelligence</button>
+            <button class="nav-tab" data-view="leadlag">Lead/Lag Matrix</button>
+        </div>
+        <div class="nav-status" id="navStatus">
+            <span class="status-dot live"></span> Live
+        </div>
+    </nav>
+
+    <!-- ==================== VIEW: DASHBOARD ==================== -->
+    <div class="view active" id="view-dashboard">
+        <!-- Summary Cards -->
+        <div class="summary-grid" id="summaryGrid">
+            <div class="summary-card loading">Loading...</div>
+        </div>
+
+        <!-- Macro Context -->
+        <div class="section">
+            <div class="section-header">
+                <h2>Macro Context</h2>
+                <span class="badge">Live</span>
+            </div>
+            <div class="macro-grid" id="macroGrid"></div>
+        </div>
+
+        <!-- Instrument Overview -->
+        <div class="section">
+            <div class="section-header">
+                <h2>Global Instruments</h2>
+                <button class="btn btn-sm" onclick="refreshData()">Refresh</button>
+            </div>
+            <div class="instrument-grid" id="instrumentGrid"></div>
+        </div>
+
+        <!-- Sector Health -->
+        <div class="section">
+            <div class="section-header">
+                <h2>Sector Health</h2>
+            </div>
+            <div class="chart-container" style="height:300px;">
+                <canvas id="sectorChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Recent Signals -->
+        <div class="section">
+            <div class="section-header">
+                <h2>Recent Early-Warning Signals</h2>
+                <button class="btn btn-sm" onclick="loadSignals()">Refresh</button>
+            </div>
+            <div class="signals-list" id="dashboardSignals"></div>
+        </div>
+    </div>
+
+    <!-- ==================== VIEW: INSTRUMENTS ==================== -->
+    <div class="view" id="view-instruments">
+        <div class="view-header">
+            <h1>9 Global Instruments</h1>
+            <p>NIFTY 50 + 8 Commodities/Energy — Live simulated prices with historical context</p>
+        </div>
+        <div class="instruments-full" id="instrumentsFull"></div>
+        <div class="section">
+            <h2>Price History</h2>
+            <div class="chart-container" style="height:350px;">
+                <canvas id="instrChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== VIEW: COMPANIES ==================== -->
+    <div class="view" id="view-companies">
+        <div class="view-header">
+            <h1>Company Character Profiles</h1>
+            <p>50 NIFTY companies with dynamic sensitivity models</p>
+            <div class="filter-bar">
+                <label>Filter by Sector:</label>
+                <select id="sectorFilter" onchange="loadCompanies()">
+                    <option value="">All Sectors</option>
+                </select>
+                <input type="text" id="companySearch" placeholder="Search company..." oninput="loadCompanies()">
+            </div>
+        </div>
+        <div class="companies-grid" id="companiesGrid"></div>
+    </div>
+
+    <!-- ==================== VIEW: SIGNALS ==================== -->
+    <div class="view" id="view-signals">
+        <div class="view-header">
+            <h1>Early-Warning Intelligence</h1>
+            <p>Multi-source evidence engine — signals with confidence, probability, and impact pathways</p>
+            <button class="btn" onclick="generateSignals()">Generate New Signals</button>
+        </div>
+        <div class="signals-list" id="signalsList"></div>
+    </div>
+
+    <!-- ==================== VIEW: FORECASTS ==================== -->
+    <div class="view" id="view-forecasts">
+        <div class="view-header">
+            <h1>Forward Intelligence Layer</h1>
+            <p>Multi-time-horizon forecasts: 5min → Next Day, with probability & confidence scoring</p>
+        </div>
+        <div class="forecast-table-container">
+            <table class="forecast-table" id="forecastTable">
+                <thead>
+                    <tr>
+                        <th>Instrument</th>
+                        <th>5 min</th>
+                        <th>15 min</th>
+                        <th>30 min</th>
+                        <th>60 min</th>
+                        <th>Next Session</th>
+                        <th>Next Day</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ==================== VIEW: LEAD/LAG ==================== -->
+    <div class="view" id="view-leadlag">
+        <div class="view-header">
+            <h1>Lead / Lag Impact Matrix</h1>
+            <p>Historical timing of impact propagation: Global Instruments → Sectors</p>
+        </div>
+        <div class="leadlag-table-container">
+            <table class="leadlag-table" id="leadlagTable">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="legend">
+            <span class="legend-item"><span class="legend-dot" style="background:#00e676;"></span> Direct (Minutes/Hours)</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#ffd740;"></span> Short-Lag (Same Day)</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#ff9100;"></span> Medium-Lag (Several Days)</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#ff1744;"></span> Long-Lag (Weeks/Months)</span>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" id="modalContent">
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
